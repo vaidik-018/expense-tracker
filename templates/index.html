@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Expense Tracker</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            margin: 30px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        table {
+            margin: auto;
+            border-collapse: collapse;
+            width: 60%;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid black;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        canvas {
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Expense Summary</h1>
+
+    <button onclick="loadData()">Load Data</button>
+
+    <h2>ADD EXPENSE</h2>
+    <input type="text" id="category" placeholder="Category">
+    <input type="number" id="amount" placeholder="Amount">
+    <input type="date" id="date">
+    <button onclick="addExpense()">Add Expense</button>
+
+    <!-- TABLE -->
+    <table id="table">
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- CHART -->
+    <canvas id="myChart" width="400" height="200"></canvas>
+
+    <script>
+
+function deleteExpense(id){
+    console.log("deleted clicked", id);
+    fetch(`http://127.0.0.1:5000/delete/${id}`,{
+        method:"DELETE"
+    })
+    .then(res => res.json())
+    .then(data =>{
+        alert("deleted successfully!!!");
+        loadData()
+    })
+    .catch(err =>{
+        console.log(err);
+        alert("error deleting");
+    });
+}
+        
+function addExpense() {
+    const category = document.getElementById("category").value;
+    const amount = document.getElementById("amount").value;
+    const date = document.getElementById("date").value;
+
+    fetch("http://127.0.0.1:5000/add", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            type: "expense",
+            category: category,
+            amount: amount,
+            date: date
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Added successfully!");
+        loadData();
+    });
+}
+
+function loadData() {
+    fetch("http://127.0.0.1:5000/transactions")
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+
+        // TABLE
+        let tbody = document.querySelector("#table tbody");
+        tbody.innerHTML = "";
+
+        data.forEach(item => {
+            let row = `
+                <tr>
+                    <td>${new Date(item.date).getMonth()+1}</td>
+                    <td>${item.category}</td>
+                    <td>${item.amount}</td>
+                    <td>
+                        <button onclick="deleteExpense(${item.id})">Delete</button?
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        // CHART
+        const labels = data.map(item => item.category);
+        const values = data.map(item => item.amount);
+
+        const ctx = document.getElementById("myChart").getContext("2d");
+
+        // destroy old chart
+        if (window.chart) {
+            window.chart.destroy();
+        }
+
+        window.chart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Expenses",
+                    data: values,
+                    borderWidth: 1
+                }]
+            }
+        });
+
+    });
+}
+</script>
+</body>
+</html>
