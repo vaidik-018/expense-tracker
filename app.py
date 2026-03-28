@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import sqlite3
 import pandas as pd
+import os
 
 from utils.analytics import monthly_summary
 from utils.prediction import predict_next_month
@@ -99,4 +100,4 @@ def transactions():
     return jsonify(df.to_dict(orient="records"))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
